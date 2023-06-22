@@ -1,0 +1,183 @@
+import json
+
+class Flight:
+    def __init__(self, flight_number, source, destination, max_seats):
+        self.flight_number = flight_number
+        self.source = source
+        self.destination = destination
+        self.max_seats = max_seats
+        self.available_seats = max_seats
+        self.passengers = []
+
+    def add_passenger(self, passenger):
+        if self.available_seats > 0:
+            self.passengers.append(passenger)
+            self.available_seats -= 1
+            print(f"Passenger {passenger.name} booked a seat on Flight {self.flight_number}.")
+        else:
+            print(f"No available seats on Flight {self.flight_number}.")
+
+    def remove_passenger(self, passenger):
+        if passenger in self.passengers:
+            self.passengers.remove(passenger)
+            self.available_seats += 1
+            print(f"Passenger {passenger.name} canceled their seat on Flight {self.flight_number}.")
+        else:
+            print(f"Passenger {passenger.name} is not booked on Flight {self.flight_number}.")
+
+    def get_details(self):
+        return f"Flight Number: {self.flight_number}\nSource: {self.source}\nDestination: {self.destination}\nAvailable Seats: {self.available_seats}/{self.max_seats}"
+
+
+class Passenger:
+    def __init__(self, name):
+        self.name = name
+
+
+class FlightReservationSystem:
+    def __init__(self):
+        self.flights = []
+
+    def add_flight(self, flight):
+        self.flights.append(flight)
+        print(f"Flight {flight.flight_number} added to the system.")
+
+    def passenger_login(self):
+        passenger_name = input("Enter passenger name: ")
+        return Passenger(passenger_name)
+
+    def book_flight(self, passenger):
+        print("Available Flights:")
+        for flight in self.flights:
+            print(flight.get_details())
+
+        flight_number = input("Enter the flight number to book: ")
+        for flight in self.flights:
+            if flight.flight_number == flight_number:
+                flight.add_passenger(passenger)
+                return
+        print(f"Flight {flight_number} not found in the system.")
+
+    def cancel_flight(self, passenger):
+        for flight in self.flights:
+            if passenger in flight.passengers:
+                flight.remove_passenger(passenger)
+                return
+        print("Passenger is not booked on any flights.")
+
+    def display_flight_details(self):
+        print("Flight Details:")
+        for flight in self.flights:
+            print(flight.get_details())
+
+    def save_flight_data(self, file_name):
+        data = []
+        for flight in self.flights:
+            flight_data = {
+                'flight_number': flight.flight_number,
+                'source': flight.source,
+                'destination': flight.destination,
+                'max_seats': flight.max_seats,
+                'available_seats': flight.available_seats,
+                'passengers': [passenger.name for passenger in flight.passengers]
+            }
+            data.append(flight_data)
+
+        with open(file_name, 'w') as file:
+            json.dump(data, file)
+        print(f"Flight data saved to {file_name}.")
+
+    def load_flight_data(self, file_name):
+        try:
+            with open(file_name, 'r') as file:
+                data = json.load(file)
+                for flight_data in data:
+                    flight = Flight(
+                        flight_data['flight_number'],
+                        flight_data['source'],
+                        flight_data['destination'],
+                        flight_data['max_seats']
+                    )
+                    flight.available_seats = flight_data['available_seats']
+                    passengers = [Passenger(name) for name in flight_data['passengers']]
+                    flight.passengers = passengers
+                    self.flights.append(flight)
+            print(f"Flight data loaded from {file_name}.")
+        except FileNotFoundError:
+            print(f"No flight data found in {file_name}.")
+
+
+# Example usage of the FlightReservationSystem
+
+reservation_system = FlightReservationSystem()
+
+# Load flight data from a file
+reservation_system.load_flight_data("flight_data.json")
+
+while True:
+    print("\n1. Office Login")
+    print("2. Passenger Login")
+    print("3. Exit")
+    choice = input("Enter your choice: ")
+
+    if choice == "1":
+        office_login = input("Enter office login: ")
+        if office_login == "admin":
+            while True:
+                print("\n1. Add Flight")
+                print("2. Display Flight Details")
+                print("3. Save Flight Data")
+                print("4. Logout")
+                choice = input("Enter your choice: ")
+
+                if choice == "1":
+                    flight_number = input("Enter flight number: ")
+                    source = input("Enter source: ")
+                    destination = input("Enter destination: ")
+                    max_seats = int(input("Enter maximum seats: "))
+
+                    flight = Flight(flight_number, source, destination, max_seats)
+                    reservation_system.add_flight(flight)
+
+                elif choice == "2":
+                    reservation_system.display_flight_details()
+
+                elif choice == "3":
+                    reservation_system.save_flight_data("flight_data.json")
+
+                elif choice == "4":
+                    break
+
+                else:
+                    print("Invalid choice. Try again.")
+        else:
+            print("Invalid office login.")
+
+    elif choice == "2":
+        passenger = reservation_system.passenger_login()
+        while True:
+            print("\n1. Book Flight")
+            print("2. Cancel Flight")
+            print("3. Logout")
+            choice = input("Enter your choice: ")
+
+            if choice == "1":
+                reservation_system.book_flight(passenger)
+
+            elif choice == "2":
+                reservation_system.cancel_flight(passenger)
+
+            elif choice == "3":
+                break
+
+            else:
+                print("Invalid choice. Try again.")
+
+    elif choice == "3":
+        break
+
+    else:
+        print("Invalid choice. Try again.")
+
+# Save flight data before exiting
+reservation_system.save_flight_data("flight_data.json")
