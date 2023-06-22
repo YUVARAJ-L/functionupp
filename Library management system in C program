@@ -1,0 +1,303 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+
+#define MAX_BOOKS 100
+#define MAX_STUDENTS 100
+
+// Structure to store book information
+struct Book {
+    int bookId;
+    char title[50];
+    char author[50];
+    int isAvailable;
+};
+
+// Structure to store student information
+struct Student {
+    int rollNo;
+    char name[50];
+    int booksBorrowed;
+    int borrowedBookIds[5];
+};
+
+// Function prototypes
+void adminLogin();
+void studentLogin();
+void addBook();
+void displayBooks();
+void issueBook(int rollNo);
+void returnBook(int rollNo);
+void calculateFine(int rollNo);
+void displayStudentDetails(int rollNo);
+
+// Global variables
+struct Book books[MAX_BOOKS];
+int bookCount = 0;
+struct Student students[MAX_STUDENTS];
+int studentCount = 0;
+//int MAX_STUDENTS=100;
+int main() {
+    int choice;
+
+    while (1) {
+        printf("\nLibrary Management System\n");
+        printf("1. Admin Login\n");
+        printf("2. Student Login\n");
+        printf("3. Exit\n");
+        printf("Enter your choice: ");
+        scanf("%d", &choice);
+
+        switch (choice) {
+            case 1:
+                adminLogin();
+                break;
+            case 2:
+                studentLogin();
+                break;
+            case 3:
+                printf("Thank you for using the Library Management System!\n");
+                exit(0);
+            default:
+                printf("Invalid choice. Please try again.\n");
+        }
+    }
+
+    return 0;
+}
+
+void adminLogin() {
+    char password[10];
+    printf("Enter the admin password: ");
+    scanf("%s", password);
+
+    // Check if the entered password is correct
+    if (strcmp(password, "admin") == 0) {
+        int choice;
+
+        while (1) {
+            printf("\nAdmin Menu\n");
+            printf("1. Add Book\n");
+            printf("2. Display Books\n");
+            printf("3. Add students\n");
+            printf("4. Exit\n");
+            printf("Enter your choice: ");
+            scanf("%d", &choice);
+
+            switch (choice) {
+                case 1:
+                    addBook();
+                    break;
+                case 2:
+                    displayBooks();
+                    break;
+                case 3:
+                    addStudent();
+                    break;
+                case 4:
+                    return;
+                default:
+                    printf("Invalid choice. Please try again.\n");
+            }
+        }
+    } else {
+        printf("Incorrect password. Access denied.\n");
+    }
+}
+
+void studentLogin() {
+    int rollNo;
+    printf("Enter your roll number: ");
+    scanf("%d", &rollNo);
+
+    int i;
+    for (i = 0; i < studentCount; i++) {
+        if (students[i].rollNo == rollNo) {
+            int choice;
+
+            while (1) {
+                printf("\nStudent Menu\n");
+                printf("1. Display Books\n");
+                printf("2. Issue Book\n");
+                printf("3. Return Book\n");
+                printf("4. Calculate Fine\n");
+                printf("5. Display My Details\n");
+                printf("6. Exit\n");
+                printf("Enter your choice: ");
+                scanf("%d", &choice);
+
+                switch (choice) {
+                    case 1:
+                        displayBooks();
+                        break;
+                    case 2:
+                        issueBook(rollNo);
+                        break;
+                    case 3:
+                        returnBook(rollNo);
+                        break;
+                    case 4:
+                        calculateFine(rollNo);
+                        break;
+                    case 5:
+                        displayStudentDetails(rollNo);
+                        break;
+                    case 6:
+                        return;
+                    default:
+                        printf("Invalid choice. Please try again.\n");
+                }
+            }
+        }
+    }
+
+    printf("Student not found. Please try again.\n");
+}
+
+void addBook() {
+    if (bookCount == MAX_BOOKS) {
+        printf("Maximum book limit reached. Cannot add more books.\n");
+        return;
+    }
+
+    struct Book newBook;
+    printf("Enter the Book ID: ");
+    scanf("%d", &newBook.bookId);
+
+    printf("Enter the Book Title: ");
+    scanf(" %[^\n]s", newBook.title);
+
+    printf("Enter the Book Author: ");
+    scanf(" %[^\n]s", newBook.author);
+
+    newBook.isAvailable = 1;
+    books[bookCount] = newBook;
+    bookCount++;
+
+    printf("Book added successfully.\n");
+}
+
+void displayBooks() {
+    if (bookCount == 0) {
+        printf("No books available in the library.\n");
+        return;
+    }
+
+    printf("Book ID\tTitle\tAuthor\tAvailability\n");
+    int i;
+    for (i = 0; i < bookCount; i++) {
+        printf("%d\t%s\t%s\t%s\n", books[i].bookId, books[i].title, books[i].author,
+               (books[i].isAvailable == 1) ? "Available" : "Not Available");
+    }
+}
+
+void issueBook(int rollNo) {
+    int bookId;
+    printf("Enter the Book ID: ");
+    scanf("%d", &bookId);
+
+    int i;
+    for (i = 0; i < bookCount; i++) {
+        if (books[i].bookId == bookId) {
+            if (books[i].isAvailable == 1) {
+                if (students[rollNo].booksBorrowed < 5) {
+                    books[i].isAvailable = 0;
+                    students[rollNo].borrowedBookIds[students[rollNo].booksBorrowed] = bookId;
+                    students[rollNo].booksBorrowed++;
+                    printf("Book issued successfully.\n");
+                    return;
+                } else {
+                    printf("You have reached the maximum borrowing limit.\n");
+                    return;
+                }
+            } else {
+                printf("Book not available for issuing.\n");
+                return;
+            }
+        }
+    }
+
+    printf("Book not found. Please try again.\n");
+}
+
+void returnBook(int rollNo) {
+    int bookId;
+    printf("Enter the Book ID: ");
+    scanf("%d", &bookId);
+
+    int i;
+    for (i = 0; i < bookCount; i++) {
+        if (books[i].bookId == bookId) {
+            if (books[i].isAvailable == 0) {
+                books[i].isAvailable = 1;
+                int j;
+                for (j = 0; j < students[rollNo].booksBorrowed; j++) {
+                    if (students[rollNo].borrowedBookIds[j] == bookId) {
+                        students[rollNo].borrowedBookIds[j] = 0;
+                        students[rollNo].booksBorrowed--;
+                        printf("Book returned successfully.\n");
+                        return;
+                    }
+                }
+            } else {
+                printf("Book not issued to you. Please try again.\n");
+                return;
+            }
+        }
+    }
+
+    printf("Book not found. Please try again.\n");
+}
+
+void calculateFine(int rollNo) {
+    int i, j;
+    int fine = 0;
+
+    for (i = 0; i < students[rollNo].booksBorrowed; i++) {
+        int bookId = students[rollNo].borrowedBookIds[i];
+        for (j = 0; j < bookCount; j++) {
+            if (books[j].bookId == bookId) {
+                if (books[j].isAvailable == 0) {
+                    fine += 10; // Assuming a fine of 10 units per book per day
+                    break;
+                }
+            }
+        }
+    }
+
+    printf("Total fine for student %d: $%d\n", students[rollNo].rollNo, fine);
+}
+
+void displayStudentDetails(int rollNo) {
+    printf("Student Details\n");
+    printf("Roll No: %d\n", students[rollNo].rollNo);
+    printf("Name: %s\n", students[rollNo].name);
+    printf("Books Borrowed: %d\n", students[rollNo].booksBorrowed);
+    printf("Book IDs Borrowed: ");
+    int i;
+    for (i = 0; i < students[rollNo].booksBorrowed; i++) {
+        printf("%d ", students[rollNo].borrowedBookIds[i]);
+    }
+    printf("\n");
+}
+void addStudent() {
+    if (studentCount == MAX_STUDENTS) {
+        printf("Maximum student limit reached. Cannot add more students.\n");
+        return;
+    }
+
+    struct Student newStudent;
+    printf("Enter the Roll Number: ");
+    scanf("%d", &newStudent.rollNo);
+
+    printf("Enter the Name: ");
+    scanf(" %[^\n]s", newStudent.name);
+
+    newStudent.booksBorrowed = 0; // Initialize booksBorrowed to 0
+
+    students[studentCount] = newStudent;
+    studentCount++;
+
+    printf("Student added successfully.\n");
+}
+
